@@ -33,7 +33,7 @@ train_clean = train[!(train$PM10== -40 | train$PM10 == -1),]
 
 #utworzenie poligonu siatka_poznan z wejsciowej siatki, i dociecie punktow do obszaru siatki
 siatka_poznan = st_as_sf(siatka)
-train_clean$intersects <- st_intersects(train_cleaner, siatka_poznan) %>% lengths > 0
+train_clean$intersects <- st_intersects(train_clean, siatka_poznan) %>% lengths > 0
 train_clean = train_clean[(train_clean$intersects == T),]
 
 #histogram przeczyszczonych danychv
@@ -60,7 +60,7 @@ ocena_jedno = krige.cv(PM10 ~ 1,
                        locations = train_clean,
                        model = model_jednoSph,
                        nmax = 20)
-RMSE = sqrt(mean((ocena_sph$residual) ^ 2))
+RMSE = sqrt(mean((ocena_jedno$residual) ^ 2))
 RMSE #4.77
 
 #estymacja dla modelu jednozmiennego
@@ -86,7 +86,7 @@ ocena_wielo_lc = krige.cv(PM10 ~ lc.tif,
                          model = model_wieloSph_lc
                          )
 RMSE = sqrt(mean((ocena_wielo_lc$residual) ^ 2))
-RMSE #6.32 Sph, 6.27 Nug. 4.99 Nug bez nmax
+RMSE #5.02
 
 vario_wielo_elev = variogram(PM10~elev.tif, locations = train_clean)
 model_wieloSph_elev = fit.variogram(vario_wielo_elev, vgm(model = "Sph"))
@@ -97,15 +97,14 @@ ocena_wielo_elev = krige.cv(PM10 ~ elev.tif,
                            )
 
 RMSE = sqrt(mean((ocena_wielo_elev$residual) ^ 2))
-RMSE #6.32 Sph, 6.27 Nug. 4.91 Sph bez nmax
+RMSE #4.92
 
 
 k_lc_elev= krige(PM10 ~  elev.tif,
                  locations = train_clean, 
                  newdata = siatka_join,
-                 model = sph_hard)
+                 model = model_wieloSph_elev)
 
-#TO DZIAŁA!!!!!!!!!!!!!!!!!
 vario_wielo = variogram(PM10 ~ lc.tif + elev.tif, locations = train_clean)
 model_wieloSph = fit.variogram(vario_wielo, vgm(model = "Sph"))
 plot(vario_wielo, model_wieloSph)
@@ -114,16 +113,16 @@ ocena_wielo = krige.cv(PM10 ~ lc.tif + elev.tif,
                        locations = train_clean,
                        model = model_wieloSph)
 RMSE = sqrt(mean((ocena_wielo$residual) ^ 2))
-RMSE # 6.2 Sph, 6.12 Nug, 5.08 Sph bez nmax
+RMSE #5.08
 
 
-#k_lc= krige(PM10 ~ lc.tif + elev.tif,
- #           locations = train_clean, 
-  #          newdata = siatka_join,
-   #         model = sph_hard)
+k_lc = krige(PM10 ~ lc.tif + elev.tif,
+            locations = train_clean, 
+            newdata = siatka_join,
+            model = model_wieloSph)
 
 
-tmap_mode("plot")
+tmap_mode("view")
 tm_shape(k_lc) +
   tm_raster(col = c("var1.pred", "var1.var"),
             style = "cont", 
