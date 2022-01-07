@@ -1,7 +1,6 @@
 library(sf)
 library(stars)
 library(gstat)
-library(geostatbook) #testing
 library(tmap)
 library(ggplot2)
 library(readxl)
@@ -121,11 +120,64 @@ k_lc = krige(PM10 ~ lc.tif + elev.tif,
             newdata = siatka_join,
             model = model_wieloSph)
 
-
-tmap_mode("view")
-tm_shape(k_lc) +
-  tm_raster(col = c("var1.pred", "var1.var"),
+tmap_mode("plot")
+tm_shape(k_lc["var1.pred"]) +
+  tm_raster(col = c("var1.pred"),
             style = "cont", 
-            palette = list("-Spectral", "viridis")) +
-  tm_layout(legend.frame = TRUE)
+            palette = "-Spectral") +
+  tm_layout(legend.frame = TRUE) 
 
+# dodanie granic Poznania
+pzn_borders = read_sf("dane/poznan.gpkg")
+
+
+tmap_mode("plot")
+tm_shape(k_lc["var1.pred"]) +
+  tm_raster(col = c("var1.pred"),
+            style = "cont", 
+            palette = "-Spectral") +
+  tm_layout(legend.frame = TRUE) +
+  tm_shape(poznan) +
+  tm_borders(col = "#111111")
+
+
+# dodanie atrybutów mapy oraz stylizacji
+tm_shape(k_lc["var1.pred"]) +
+  tm_raster(col = c("var1.pred"),
+            style = "cont", 
+            palette = "-Spectral",
+            title = "  Predykcja PM10 \n         [µg/m3]",
+            n = 7) +
+tm_shape(poznan) +
+  tm_borders(col = "#555555",
+             lwd = 2) +
+  
+  tm_compass(position = c(0.87, 0.87),
+             text.size = .6) +
+  tm_scale_bar(width = 0.25,
+               text.size = 0.8,
+               position = c(0.3, 0.005, 0, 0)) +
+  tm_layout("Estymowane wartości pyłu zawieszonego\n        PM10 na terenie miasta Poznań", 
+            title.position = c(0.005, 0.97, 0, 0),
+            title.color = "#ffffff",
+            title.bg.color = "#333333",
+            title.bg.alpha = 0.8,
+            title.size = 1.05,
+            legend.outside = FALSE, 
+            legend.text.color = "#ffffff",
+            legend.title.color = "#ffffff",
+            legend.text.size = 0.9, 
+            legend.title.size = 1.3,
+            legend.position = c(0.02, 0.02, 0, 0),
+            legend.bg.color = "#333333",
+            legend.bg.alpha = 0.8,
+            compass.type = "rose"
+  ) + 
+  tm_add_legend(
+    type = "line",
+    labels = "granica Poznania",
+    col = "#222222",
+    lwd = 3)
+
+# write.csv(RMSE, "Nowacki_Rydzik_estymacja.csv")
+# write_stars(k_lc["var1.pred"], "Nowacki_Rydzik.tif")
