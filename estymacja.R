@@ -99,7 +99,7 @@ RMSE = sqrt(mean((ocena_wielo_elev$residual) ^ 2))
 RMSE #4.92
 
 
-k_lc_elev= krige(PM10 ~  elev.tif,
+k_elev= krige(PM10 ~  elev.tif,
                  locations = train_clean, 
                  newdata = siatka_join,
                  model = model_wieloSph_elev)
@@ -115,13 +115,13 @@ RMSE = sqrt(mean((ocena_wielo$residual) ^ 2))
 RMSE #5.08
 
 
-k_lc = krige(PM10 ~ lc.tif + elev.tif,
+k_lc_elev = krige(PM10 ~ lc.tif + elev.tif,
             locations = train_clean, 
             newdata = siatka_join,
             model = model_wieloSph)
 
-tmap_mode("plot")
-tm_shape(k_lc["var1.pred"]) +
+tmap_mode("view")
+tm_shape(k_lc_elev["var1.pred"]) +
   tm_raster(col = c("var1.pred"),
             style = "cont", 
             palette = "-Spectral") +
@@ -132,23 +132,23 @@ pzn_borders = read_sf("dane/poznan.gpkg")
 
 
 tmap_mode("plot")
-tm_shape(k_lc["var1.pred"]) +
+tm_shape(k_lc_elev["var1.pred"]) +
   tm_raster(col = c("var1.pred"),
             style = "cont", 
             palette = "-Spectral") +
   tm_layout(legend.frame = TRUE) +
-  tm_shape(poznan) +
+  tm_shape(pzn_borders) +
   tm_borders(col = "#111111")
 
 
 # dodanie atrybutów mapy oraz stylizacji
-tm_shape(k_lc["var1.pred"]) +
+tm_shape(k_lc_elev["var1.pred"]) +
   tm_raster(col = c("var1.pred"),
             style = "cont", 
             palette = "-Spectral",
             title = "  Predykcja PM10 \n         [µg/m3]",
             n = 7) +
-tm_shape(poznan) +
+tm_shape(pzn_borders) +
   tm_borders(col = "#555555",
              lwd = 2) +
   
@@ -180,4 +180,4 @@ tm_shape(poznan) +
     lwd = 3)
 
 # write.csv(RMSE, "Nowacki_Rydzik_estymacja.csv")
-# write_stars(k_lc["var1.pred"], "Nowacki_Rydzik.tif")
+#write_stars(k_lc_elev["var1.pred"], "Nowacki_Rydzik.tif")
